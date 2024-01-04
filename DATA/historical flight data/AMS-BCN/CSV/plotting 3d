@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
 # Directory containing CSV files
-directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\DATA\historical flight data\AMS-BCN\CSV'
+directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\DATA\historical flight data\AMS-BCN\CSV\cleaned'
 
 # Get a list of CSV files in the directory
 csv_files = [file for file in os.listdir(directory) if file.endswith('.csv')]
@@ -28,6 +28,9 @@ ax.set_ylim(10, 90)
 
 # Reverse the y-axis for latitude
 ax.invert_yaxis()
+
+# Set the range for the z-axis (altitude)
+ax.set_zlim(-10, 40000)
 
 # Set labels and legend
 ax.set_title('Flight Paths Overlay with Altitude')
