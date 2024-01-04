@@ -48,4 +48,3 @@ ax.set_ylim(-10, 45000)  # Set y-axis limits
 # Show the plot
 plt.grid(True)
 plt.show()
-print('test')
