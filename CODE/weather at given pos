@@ -58,7 +58,7 @@ for day in range(1, 8):
         print(f"File not found for Day {day} at Altitude {user_altitude}. Skipping...")
 
 # Calculate average for the user-specified altitude
-average_temperature = total_temperature / 7
+average_temperature = (total_temperature / 7) - 273,15
 average_wind_speed = total_wind_speed / 7
 average_wind_direction = total_wind_direction / 7
 
