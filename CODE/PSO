@@ -1,0 +1,128 @@
+import numpy as np
+import os
+import csv
+
+class Particle:
+    def __init__(self, num_waypoints, initial_coord, final_coord, altitude, day):
+        # Ensure a path from initial to final coordinates
+        self.waypoints = np.vstack([initial_coord] +
+                                   [initial_coord + (final_coord - initial_coord) * i / (num_waypoints - 1) for i in range(1, num_waypoints - 1)] +
+                                   [final_coord])
+        self.velocity = np.random.rand(num_waypoints, 2)
+        self.best_waypoints = np.copy(self.waypoints)
+        self.best_fitness = float('inf')
+        self.altitude = altitude
+        self.day = day
+
+
+def calculate_row(lat, lon):
+    lat_i = round((lat + 90) / 180 * 301) 
+    lon_i = round((lon + 180) / 360 * 601)
+    return (lat_i - 1) * 601 + lon_i - 1
+
+def get_weather_data(day, altitude, latitude, longitude):
+    base_directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\DATA\weather'
+    tmp_path = os.path.join(base_directory, f'Day_{day}_v_2', f'TMP_date_{day}_alt_{altitude}.csv')
+    wind_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WIND_date_{day}_alt_{altitude}.csv')
+    wdir_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WDIR_date_{day}_alt_{altitude}.csv')
+
+    try:
+        tmp = np.genfromtxt(tmp_path, delimiter=',')
+        wind = np.genfromtxt(wind_path, delimiter=',')
+        wdir = np.genfromtxt(wdir_path, delimiter=',')
+
+        row = calculate_row(latitude, longitude)
+        return tmp[row][2], wind[row][2], wdir[row][2]
+
+    except FileNotFoundError:
+        print(f"File not found for Day {day} at Altitude {altitude}. Skipping...")
+        return None, None, None
+
+def calculate_fitness(waypoints, altitude, day):
+    distance = np.sum(np.linalg.norm(np.diff(waypoints, axis=0), axis=1))
+    
+    lat, lon = waypoints[-1]
+    temperature, wind_speed, wind_direction = get_weather_data(day, altitude, lat, lon)
+    
+    if temperature is not None:
+        average_temperature = (temperature - 273.15)  # Convert to Celsius
+    else:
+        average_temperature = 0  # Default value if temperature is not available
+
+    temperature_penalty = 0.1 * average_temperature
+    wind_penalty = 0
+    direction_penalty = 0
+    
+    base_fuel_flow = 1000
+    temperature_threshold = -55.1
+    temperature_adjustment_factor = 0.997
+
+    if average_temperature < temperature_threshold:
+        fuel_flow_penalty = base_fuel_flow * (1 - (temperature_threshold - average_temperature) * temperature_adjustment_factor)
+    else:
+        fuel_flow_penalty = 0
+
+    return distance + temperature_penalty + wind_penalty + direction_penalty + fuel_flow_penalty
+
+def update_velocity(particle, global_best_waypoints, inertia_weight, cognitive_weight, social_weight):
+    inertia_term = inertia_weight * particle.velocity
+    cognitive_term = cognitive_weight * np.random.rand(*particle.velocity.shape) * (particle.best_waypoints - particle.waypoints)
+    social_term = social_weight * np.random.rand(*particle.velocity.shape) * (global_best_waypoints - particle.waypoints)
+
+    cognitive_term = cognitive_term[:, :2]
+    social_term = social_term[:, :2]
+
+    new_velocity = inertia_term + cognitive_term + social_term
+    return new_velocity
+
+def update_waypoints(particle):
+    new_waypoints = particle.waypoints + particle.velocity
+    return new_waypoints
+
+def pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations):
+    inertia_weight = 0.5
+    cognitive_weight = 1.5
+    social_weight = 1.5
+
+    particles = [Particle(num_waypoints, initial_coord, final_coord, altitude, day) for _ in range(num_particles)]
+
+    global_best_particle = min(particles, key=lambda p: calculate_fitness(p.waypoints, altitude, day))
+    global_best_waypoints = np.copy(global_best_particle.waypoints)
+
+    for iteration in range(num_iterations):
+        for particle in particles:
+            fitness = calculate_fitness(particle.waypoints, altitude, day)
+
+            if fitness < particle.best_fitness:
+                particle.best_fitness = fitness
+                particle.best_waypoints = np.copy(particle.waypoints)
+
+            if fitness < calculate_fitness(global_best_waypoints, altitude, day):
+                global_best_waypoints = np.copy(particle.waypoints)
+
+            particle.velocity = update_velocity(particle, global_best_waypoints, inertia_weight, cognitive_weight, social_weight)
+            particle.waypoints = update_waypoints(particle)
+
+    return global_best_waypoints, calculate_fitness(global_best_waypoints, altitude, day)
+
+# Example usage
+initial_coord = np.array([51, 1]) 
+final_coord = np.array([40.8, -74.4])  
+altitude = 1
+day = 1
+num_waypoints = 30
+num_particles = 100
+num_iterations = 500
+
+best_waypoints, best_fitness = pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations)
+
+# Save waypoints as a CSV file
+csv_directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\ROUTE'
+csv_path = os.path.join(csv_directory, "best_waypoints.csv")
+
+with open(csv_path, "w", newline="") as csvfile:
+    csvwriter = csv.writer(csvfile)
+    csvwriter.writerow(["Latitude", "Longitude"]) 
+    csvwriter.writerows(best_waypoints)
+
+print(f"Best waypoints saved to {csv_path}")

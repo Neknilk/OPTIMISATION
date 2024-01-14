@@ -1,0 +1,36 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Path to the CSV file
+csv_file_path = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\ROUTE\best_waypoints.csv'
+
+# Read data from CSV using pandas
+data = pd.read_csv(csv_file_path)
+
+# Extract longitude and latitude columns
+longitude = data['Longitude']
+latitude = data['Latitude']
+
+# Set custom limits
+x_limit = (-180, 180)
+y_limit = (90, -90)
+
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.scatter(longitude, latitude, c='blue', marker='o', label='Location Points')
+
+# Draw lines for x and y axes at 0
+plt.axhline(0, color='black',linewidth=0.5)
+plt.axvline(0, color='black',linewidth=0.5)
+
+plt.title('Longitude vs Latitude Plot')
+plt.xlabel('Longitude')
+plt.ylabel('Latitude')
+
+# Set custom limits
+plt.xlim(x_limit)
+plt.ylim(y_limit)
+
+plt.legend()
+plt.grid(True)
+plt.show()

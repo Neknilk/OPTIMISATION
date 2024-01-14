@@ -7,62 +7,42 @@ def calculate_row(lat, lon):
     lon_i = round((lon + 180) / 360 * 601)
     return (lat_i - 1) * 601 + lon_i - 1
 
-# Function to calculate approximate coordinates based on row index
-def calculate_coordinates(row):
-    approx_lat = ((row // 601) + 1) * (180 / 301) - 90
-    approx_lon = ((row % 601) + 1) * (360 / 601) - 180
-    return approx_lat, approx_lon
+# Function to retrieve weather data for a given day, altitude, latitude, and longitude
+def get_weather_data(day, altitude, latitude, longitude):
+    # Specify the base directory for day data
+    base_directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\DATA\weather'
 
-# Get user input for latitude, longitude, and altitude
-user_lat = float(input("Enter latitude (-90 to 90 degrees): "))
-user_lon = float(input("Enter longitude (-180 to 180 degrees): "))
-user_altitude = int(input("Enter altitude (1 to 7): "))
-
-# Initialize variables to accumulate results
-total_temperature = 0
-total_wind_speed = 0
-total_wind_direction = 0
-
-# Specify the base directory for day data
-base_directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\DATA\weather'
-
-# Loop over each day
-for day in range(1, 8):
-    # Construct the file paths for TMP, WIND, and WDIR with the user-specified altitude
-    tmp_path = os.path.join(base_directory, f'Day_{day}_v_2', f'TMP_date_{day}_alt_{user_altitude}.csv')
-    wind_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WIND_date_{day}_alt_{user_altitude}.csv')
-    wdir_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WDIR_date_{day}_alt_{user_altitude}.csv')
-
-    print(tmp_path, wind_path, wdir_path)  # Print the file paths for debugging
+    # Construct the file paths for TMP, WIND, and WDIR with the specified day, altitude, latitude, and longitude
+    tmp_path = os.path.join(base_directory, f'Day_{day}_v_2', f'TMP_date_{day}_alt_{altitude}.csv')
+    wind_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WIND_date_{day}_alt_{altitude}.csv')
+    wdir_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WDIR_date_{day}_alt_{altitude}.csv')
 
     try:
-        # Load weather data for the current day and user-specified altitude
+        # Load weather data for the specified day, altitude, latitude, and longitude
         tmp = np.genfromtxt(tmp_path, delimiter=',')
         wind = np.genfromtxt(wind_path, delimiter=',')
         wdir = np.genfromtxt(wdir_path, delimiter=',')
 
-        # Calculate the row index based on user-specified latitude and longitude
-        row = calculate_row(user_lat, user_lon)
+        # Calculate the row index based on specified latitude and longitude
+        row = calculate_row(latitude, longitude)
 
-        # Accumulate results for each day and user-specified altitude
-        total_temperature += tmp[row][2]
-        total_wind_speed += wind[row][2]
-        total_wind_direction += wdir[row][2]
-
-        # Print approximate coordinates for the current day and user-specified altitude
-        approx_lat, approx_lon = calculate_coordinates(row)
-        print(f"Approximate Coordinates for Day {day}, Altitude {user_altitude}:")
-        print(f"Latitude: {approx_lat}, Longitude: {approx_lon}")
+        # Return the weather data for the specified location
+        return tmp[row][2], wind[row][2], wdir[row][2]
 
     except FileNotFoundError:
-        print(f"File not found for Day {day} at Altitude {user_altitude}. Skipping...")
+        print(f"File not found for Day {day} at Altitude {altitude}. Skipping...")
+        return None, None, None
 
-# Calculate average for the user-specified altitude
-average_temperature = (total_temperature / 7) - 273,15
-average_wind_speed = total_wind_speed / 7
-average_wind_direction = total_wind_direction / 7
+# Example usage for day 1, altitude 1, and a specific location
+user_lat = 37.7749  # Example latitude
+user_lon = -122.4194  # Example longitude
+user_altitude = 1
+day = 1
 
-# Print average results for the user-specified altitude
-print(f"Average Temperature at Altitude {user_altitude}: {average_temperature}")
-print(f"Average Wind Speed at Altitude {user_altitude}: {average_wind_speed}")
-print(f"Average Wind Direction at Altitude {user_altitude}: {average_wind_direction}")
+temperature, wind_speed, wind_direction = get_weather_data(day, user_altitude, user_lat, user_lon)
+
+if temperature is not None:
+    print(f"Weather Data for Day {day}, Altitude {user_altitude}, Latitude {user_lat}, Longitude {user_lon}:")
+    print(f"Temperature: {temperature} K")
+    print(f"Wind Speed: {wind_speed} m/s")
+    print(f"Wind Direction: {wind_direction} degrees")
