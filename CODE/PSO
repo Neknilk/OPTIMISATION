@@ -1,7 +1,7 @@
 import numpy as np
 import os
 import csv
-
+from geopy.distance import great_circle
 class Particle:
     def __init__(self, num_waypoints, initial_coord, final_coord, altitude, day):
         # Ensure a path from initial to final coordinates
@@ -39,7 +39,10 @@ def get_weather_data(day, altitude, latitude, longitude):
         return None, None, None
 
 def calculate_fitness(waypoints, altitude, day):
-    distance = np.sum(np.linalg.norm(np.diff(waypoints, axis=0), axis=1))
+    # Calculate the total distance using the Haversine formula
+    distance = 0
+    for i in range(len(waypoints) - 1):
+        distance += great_circle(waypoints[i], waypoints[i + 1]).kilometers
     
     lat, lon = waypoints[-1]
     temperature, wind_speed, wind_direction = get_weather_data(day, altitude, lat, lon)
@@ -63,6 +66,15 @@ def calculate_fitness(waypoints, altitude, day):
         fuel_flow_penalty = 0
 
     return distance + temperature_penalty + wind_penalty + direction_penalty + fuel_flow_penalty
+
+def generate_great_circle_waypoints(initial_coord, final_coord, num_waypoints):
+    # Calculate the great circle path between initial and final coordinates
+    great_circle_path = great_circle(initial_coord, final_coord).n_points(num_waypoints)
+
+    # Extract latitude and longitude coordinates
+    waypoints = np.array([[point.latitude, point.longitude] for point in great_circle_path])
+    
+    return waypoints
 
 def update_velocity(particle, global_best_waypoints, inertia_weight, cognitive_weight, social_weight):
     inertia_term = inertia_weight * particle.velocity
@@ -112,7 +124,7 @@ altitude = 1
 day = 1
 num_waypoints = 30
 num_particles = 100
-num_iterations = 500
+num_iterations = 5
 
 best_waypoints, best_fitness = pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations)
 

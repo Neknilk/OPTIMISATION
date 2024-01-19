@@ -1,36 +1,34 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 
-# Path to the CSV file
-csv_file_path = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\ROUTE\best_waypoints.csv'
+# Load the CSV file into a pandas DataFrame
+csv_path = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\ROUTE\best_waypoints.csv'
+df = pd.read_csv(csv_path)
 
-# Read data from CSV using pandas
-data = pd.read_csv(csv_file_path)
+# Extract latitude and longitude columns from the DataFrame
+latitudes = df['Latitude'].tolist()
+longitudes = df['Longitude'].tolist()
 
-# Extract longitude and latitude columns
-longitude = data['Longitude']
-latitude = data['Latitude']
+# Create a great circle path
+start = (latitudes[0], longitudes[0])
+end = (latitudes[-1], longitudes[-1])
 
-# Set custom limits
-x_limit = (-180, 180)
-y_limit = (90, -90)
+# Create a Cartopy GeoAxes with PlateCarree projection
+fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()})
 
-# Plotting
-plt.figure(figsize=(10, 6))
-plt.scatter(longitude, latitude, c='blue', marker='o', label='Location Points')
+# Add coastlines and countries to the map
+ax.add_feature(cfeature.COASTLINE)
+ax.add_feature(cfeature.BORDERS, linestyle=':')
 
-# Draw lines for x and y axes at 0
-plt.axhline(0, color='black',linewidth=0.5)
-plt.axvline(0, color='black',linewidth=0.5)
+# Draw waypoints
+ax.scatter(longitudes, latitudes, s=50, color='blue', label='Waypoints')
 
-plt.title('Longitude vs Latitude Plot')
-plt.xlabel('Longitude')
-plt.ylabel('Latitude')
+# Draw great circle path
+ax.plot([start[1], end[1]], [start[0], end[0]], linewidth=2, color='red', label='Great Circle Path')
 
-# Set custom limits
-plt.xlim(x_limit)
-plt.ylim(y_limit)
-
+# Show the plot
+plt.title('Great Circle Path and Waypoints')
 plt.legend()
-plt.grid(True)
 plt.show()

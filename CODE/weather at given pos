@@ -36,8 +36,8 @@ def get_weather_data(day, altitude, latitude, longitude):
 # Example usage for day 1, altitude 1, and a specific location
 user_lat = 37.7749  # Example latitude
 user_lon = -122.4194  # Example longitude
-user_altitude = 1
-day = 1
+user_altitude = 5
+day = 2
 
 temperature, wind_speed, wind_direction = get_weather_data(day, user_altitude, user_lat, user_lon)
 
