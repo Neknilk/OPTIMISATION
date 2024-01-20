@@ -19,6 +19,9 @@ for csv_file in csv_files:
     # Filter rows based on the condition (value in '3d Altitude Ft' column is lower than 20000)
     df = df[df['[3d Altitude Ft]'] >= 20000]
 
+    # Drop rows where any of the specified columns has missing values
+    df.dropna(subset=['SELECTED FUEL FLOW #1 (KG)', 'SELECTED FUEL FLOW #2 (KG)', 'TRUE AIRSPEED (derived)'], how='any', inplace=True)
+
     # Save the cleaned DataFrame to the output folder
     df.to_csv(output_path, index=False)
 
