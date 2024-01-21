@@ -34,7 +34,7 @@ def get_weather_data(day, altitude, latitude, longitude):
         return None, None, None
 
 # Example usage for day 1, altitude 1, and a specific location
-user_lat = 37.7749  # Example latitude
+user_lat = 0  # Example latitude
 user_lon = -122.4194  # Example longitude
 user_altitude = 5
 day = 2

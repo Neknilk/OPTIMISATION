@@ -12,8 +12,12 @@ fuel_flow_model = joblib.load(fuel_flow_model_path)
 
 class Particle:
     def __init__(self, num_waypoints, initial_coord, final_coord, altitude, day):
-        # Generate waypoints along a Great Circle path
-        great_circle_path = self.generate_great_circle_waypoints(initial_coord, final_coord, num_waypoints)
+        # Calculate the coordinates for the start and end waypoints
+        start_waypoint = self.calculate_waypoint(initial_coord, final_coord, 120.0)
+        end_waypoint = self.calculate_waypoint(final_coord, initial_coord, 90.0)
+
+        # Generate waypoints along a Great Circle path with lateral deviation
+        great_circle_path = self.generate_great_circle_waypoints(start_waypoint, end_waypoint, num_waypoints, lateral_deviation_nm=50.0)
 
         # Extract latitude and longitude coordinates
         self.waypoints = np.array([[point[0], point[1]] for point in great_circle_path])
@@ -23,21 +27,41 @@ class Particle:
         self.altitude = altitude
         self.day = day
 
-    def generate_great_circle_waypoints(self, initial_coord, final_coord, num_waypoints):
+    def calculate_waypoint(self, start_coord, end_coord, distance_nm):
+        result = geod.Inverse(start_coord[0], start_coord[1], end_coord[0], end_coord[1])
+        initial_azimuth = result['azi1']
+        new_point = geod.Direct(start_coord[0], start_coord[1], initial_azimuth, distance_nm * 1852.0)
+        return new_point['lat2'], new_point['lon2']
+
+    def generate_great_circle_waypoints(self, start_coord, end_coord, num_waypoints, lateral_deviation_nm=50.0):
         waypoints = []
-        for i in range(num_waypoints):
+
+        # Calculate the initial azimuth and destination point for the great circle path
+        result = geod.Inverse(start_coord[0], start_coord[1], end_coord[0], end_coord[1])
+        initial_azimuth = result['azi1']
+
+        # Add the start waypoint to the list
+        waypoints.append((start_coord[0], start_coord[1]))
+
+        # Calculate intermediate waypoints with lateral deviation
+        for i in range(1, num_waypoints - 1):
             fraction = i / (num_waypoints - 1)
-            point = (
-                initial_coord[0] + fraction * (final_coord[0] - initial_coord[0]),
-                initial_coord[1] + fraction * (final_coord[1] - initial_coord[1])
-            )
-            waypoints.append(point)
+            distance = fraction * geod.Inverse(start_coord[0], start_coord[1], end_coord[0], end_coord[1])['s12']
+
+            # Apply lateral deviation within the specified range
+            lateral_distance = np.random.uniform(-lateral_deviation_nm, lateral_deviation_nm) * 1852.0  # Convert to meters
+            point = geod.Direct(start_coord[0], start_coord[1], initial_azimuth, distance + lateral_distance)
+            waypoints.append((point['lat2'], point['lon2']))
+
+        # Add the end waypoint
+        waypoints.append((end_coord[0], end_coord[1]))
+
         return waypoints
 
 def calculate_row(lat, lon):
-    lat_i = round((lat + 90) / 180 * 301) 
-    lon_i = round((lon + 180) / 360 * 601)
-    return (lat_i - 1) * 601 + lon_i - 1
+    lat_i = round(((lat + 90) / 180) * 301) 
+    lon_i = round(((lon + 180) / 360) * 601)
+    return ((lat_i - 1) * 601) + lon_i - 1
 
 def get_weather_data(day, altitude, latitude, longitude):
     base_directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\DATA\weather'
@@ -78,7 +102,7 @@ def calculate_fitness(waypoints, altitude, day, speed_meters_per_second):
         if temperature is not None:
             total_air_temperature = (temperature - 273.15)  # Convert to Celsius
         else:
-            total_air_temperature = 0  # Default value if temperature is not available
+            total_air_temperature = -30,97  # Default value if temperature is not available
 
         # Use the fuel flow model to predict fuel flow based on total air temperature
         predicted_fuel_flow = fuel_flow_model.predict([[total_air_temperature]])[0]
@@ -95,8 +119,8 @@ def calculate_fitness(waypoints, altitude, day, speed_meters_per_second):
 
         # Calculate other penalties (temperature_penalty, wind_penalty, direction_penalty)
         temperature_penalty += 0.1 * total_air_temperature
-        wind_penalty += 0  # Update with your wind penalty calculation
-        direction_penalty += 0  # Update with your direction penalty calculation
+        wind_penalty += 0.05 * wind_speed  # Update with your wind penalty calculation
+        direction_penalty += 0.02 * abs(wind_direction) # Update with your direction penalty calculation
 
     # Include exploration time in the fitness (multiply by total fuel flow)
     exploration_fuel_burned = total_exploration_time * total_fuel_used
@@ -135,10 +159,10 @@ def update_waypoints(particle, exploration_time):
     return new_waypoints, exploration_time
 
 def pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second):
-    inertia_weight = 0.5
-    cognitive_weight = 1.5
-    social_weight = 1.5
-
+    inertia_weight = 0.2
+    cognitive_weight = 2.5
+    social_weight = 1.0
+    
     particles = [Particle(num_waypoints, initial_coord, final_coord, altitude, day) for _ in range(num_particles)]
 
     global_best_particle = min(particles, key=lambda p: calculate_fitness(p.waypoints, altitude, day, speed_meters_per_second))
@@ -157,9 +181,18 @@ def pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles,
 
             # Update velocity and get exploration time
             particle.velocity, exploration_time = update_velocity(particle, global_best_waypoints, inertia_weight, cognitive_weight, social_weight, speed_meters_per_second)
+
+            # Update particle position and incorporate exploration time into fitness
             particle.waypoints, exploration_time = update_waypoints(particle, exploration_time)
+            fitness += exploration_time
+
+       
+        print(f"Iteration {iteration + 1}, Best Fitness: {calculate_fitness(global_best_waypoints, altitude, day, speed_meters_per_second)}")
 
     return global_best_waypoints, calculate_fitness(global_best_waypoints, altitude, day, speed_meters_per_second)
+
+
+
 
 def calculate_and_save_output(csv_path, waypoints, altitude, day, speed_meters_per_second):
     # Open CSV file for writing
@@ -180,27 +213,32 @@ def calculate_and_save_output(csv_path, waypoints, altitude, day, speed_meters_p
             distance_leg = geod.Inverse(lat, lon, next_lat, next_lon)['s12']
 
             # Get weather data for the next waypoint
-            temperature, wind_speed, wind_direction = get_weather_data(day, altitude, next_lat, next_lon)
+            temperature = get_weather_data(day, altitude, next_lat, next_lon)
 
             if temperature is not None:
                 # Adjust temperature input (for debugging purposes)
-                adjusted_temperature = temperature  
-                total_air_temperature = (adjusted_temperature - 273.15)  # Convert to Celsius
+                adjusted_temperature = temperature
+                if isinstance(adjusted_temperature, tuple):
+                    # Assuming the tuple structure is (value,); extract the first element
+                    adjusted_temperature = adjusted_temperature[0]
+
+                total_air_temperature = adjusted_temperature - 273.15  # Convert to Celsius
             else:
-                total_air_temperature = 0  # Default value if temperature is not available
+                # Set a default temperature value when weather data is unavailable
+                total_air_temperature = -10  # Replace with your desired default temperature
 
             # Use the fuel flow model to predict fuel flow based on total air temperature
             predicted_fuel_flow = fuel_flow_model.predict([[total_air_temperature]])[0]
 
             # Calculate time between waypoints and fuel used during the leg
             time_leg = (distance_leg / speed_meters_per_second) / 3600
-            fuel_used_leg = predicted_fuel_flow * time_leg 
+            fuel_used_leg = predicted_fuel_flow * time_leg
 
             # Add fuel used during the leg to the total fuel used
             total_fuel_burned += fuel_used_leg
 
             # Calculate exploration time for the leg
-            total_time_taken += time_leg 
+            total_time_taken += time_leg
 
             # Write row to CSV
             csvwriter.writerow([lat, lon, fuel_used_leg, time_leg, total_air_temperature])
@@ -211,14 +249,15 @@ def calculate_and_save_output(csv_path, waypoints, altitude, day, speed_meters_p
         # Write total values to the CSV file without using the word "Total"
         csvwriter.writerow(["", "", total_fuel_burned, total_time_taken, ""])
 
+
 # Example usage
 initial_coord = np.array([52.302011, 4.781655]) 
 final_coord = np.array([41.300061, 2.075436])
 altitude = 1  # for weather data
 day = 1  # for weather data
 num_waypoints = 15
-num_particles = 10
-num_iterations = 10
+num_particles = 1
+num_iterations = 3
 speed_meters_per_second = 227.435889  # determined by historic data
 
 best_waypoints, best_fitness = pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second)
