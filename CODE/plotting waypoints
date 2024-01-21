@@ -4,9 +4,16 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 from geographiclib.geodesic import Geodesic
 
-# Load the CSV file into a pandas DataFrame
+# Load the CSV file into a pandas DataFrame excluding the last row
 csv_path = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\ROUTE output\best_waypoints.csv'
-df = pd.read_csv(csv_path)
+df = pd.read_csv(csv_path, engine='python')  # Skip the last row
+
+# Convert latitude and longitude columns to numeric
+df['Latitude'] = pd.to_numeric(df['Latitude'], errors='coerce')
+df['Longitude'] = pd.to_numeric(df['Longitude'], errors='coerce')
+
+# Drop rows with NaN values in Latitude or Longitude columns
+df = df.dropna(subset=['Latitude', 'Longitude'])
 
 # Extract latitude and longitude columns from the DataFrame
 latitudes = df['Latitude'].tolist()
@@ -32,7 +39,7 @@ for i in range(num_points + 1):
     gc_longitudes.append(pos['lon2'])
 
 # Create a Cartopy GeoAxes with PlateCarree projection
-fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()}, figsize=(12, 8))  # Adjust the figure size here
+fig, ax = plt.subplots(subplot_kw={'projection': ccrs.PlateCarree()}, figsize=(12, 8))
 
 # Add coastlines and countries to the map
 ax.add_feature(cfeature.COASTLINE)
@@ -45,7 +52,7 @@ ax.scatter(longitudes, latitudes, s=50, color='blue', label='Waypoints')
 ax.plot(gc_longitudes, gc_latitudes, linewidth=2, color='red', label='Great Circle Path')
 
 # Set the extent of the GeoAxes explicitly
-ax.set_extent([min(longitudes)-6, max(longitudes)+6, min(latitudes)-2, max(latitudes)+2])  # Adjust the padding as needed
+ax.set_extent([min(longitudes)-6, max(longitudes)+6, min(latitudes)-2, max(latitudes)+2])
 
 # Show the plot
 plt.title('Great Circle Path and Waypoints')
