@@ -1,0 +1,48 @@
+import pandas as pd
+import numpy as np
+from geographiclib.geodesic import Geodesic
+
+# Function to calculate coordinates along a great circle route
+def calculate_great_circle_route(start, end, num_points):
+    waypoints = [start]
+    
+    # Calculate initial azimuth and distance
+    geod = Geodesic.WGS84
+    g = geod.Inverse(*start, *end)
+    
+    # Waypoint 1: 120nm after the initial point
+    waypoint1 = geod.Direct(*start, g['azi1'], 120 * 1852)  # 1 nautical mile = 1852 meters
+    waypoints.append((waypoint1['lat2'], waypoint1['lon2']))
+    
+    # Calculate intermediate waypoints
+    for i in range(1, num_points):
+        fraction = i / (num_points - 1)
+        intermediate_point = geod.Direct(*start, g['azi1'], fraction * g['s12'])
+        waypoints.append((intermediate_point['lat2'], intermediate_point['lon2']))
+    
+    # Waypoint 2: 90nm before the destination point
+    waypoint2 = geod.Direct(*end, g['azi2'], -90 * 1852)  # 1 nautical mile = 1852 meters
+    waypoints.append((waypoint2['lat2'], waypoint2['lon2']))
+    
+    waypoints.append(end)
+    return waypoints
+
+# Set initial and destination coordinates
+initial_point = (40.7128, -74.0060)  # Example coordinates for New York
+destination_point = (34.0522, -118.2437)  # Example coordinates for Los Angeles
+
+# Calculate waypoints
+num_waypoints = 15
+waypoints = calculate_great_circle_route(initial_point, destination_point, num_waypoints)
+
+# Create DataFrame
+df = pd.DataFrame(waypoints, columns=['Latitude', 'Longitude'])
+
+# Add node labels as numeric values
+df['node'] = np.arange(1, len(df) + 1)
+
+# Save as CSV
+csv_path = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\shady\waypoints.csv'
+df.to_csv(csv_path, index=False)
+
+print(f'CSV file saved at: {csv_path}')

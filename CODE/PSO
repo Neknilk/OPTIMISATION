@@ -163,8 +163,8 @@ def update_waypoints(particle, exploration_time):
 
 def pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second):
     inertia_weight = 0.2
-    cognitive_weight = 2.5
-    social_weight = 1.0
+    cognitive_weight = 1.5
+    social_weight = 0.5
     
     particles = [Particle(num_waypoints, initial_coord, final_coord, altitude, day) for _ in range(num_particles)]
 
@@ -259,8 +259,8 @@ final_coord = np.array([41.300061, 2.075436])
 altitude = 1  # for weather data
 day = 1  # for weather data
 num_waypoints = 15
-num_particles = 30
-num_iterations = 30
+num_particles = 100
+num_iterations = 1
 speed_meters_per_second = 227.435889  # determined by historic data
 
 best_waypoints, best_fitness = pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second)
@@ -270,7 +270,7 @@ time_taken = calculate_time(best_waypoints, speed_meters_per_second)
 
 # Save waypoints as a CSV file with burned fuel and time information
 csv_directory = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\ROUTE output'
-csv_path = os.path.join(csv_directory, "AMS-BCN.csv")
+csv_path = os.path.join(csv_directory, "playing.csv")
 
 calculate_and_save_output(csv_path, best_waypoints, altitude, day, speed_meters_per_second)
 
