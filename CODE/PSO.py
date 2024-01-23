@@ -18,7 +18,7 @@ fuel_flow_model = joblib.load(fuel_flow_model_path)
 class Particle:
     def __init__(self, num_waypoints, initial_coord, final_coord, altitude, day):
         initial_coord = self.calculate_waypoint(initial_coord, final_coord, 120.0)
-        final_coord = self.calculate_waypoint(final_coord, initial_coord, 90.0)
+        final_coord = self.calculate_waypoint(final_coord, initial_coord, 90)
     
         self.waypoints = self.generate_great_circle_waypoints(initial_coord, final_coord, num_waypoints, lateral_deviation_nm=20.0)
         self.velocity = np.random.rand(num_waypoints, 2)
@@ -173,9 +173,9 @@ def update_waypoints(particle, exploration_time):
     return new_waypoints, exploration_time
 
 def pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second):
-    inertia_weight = 0.2
-    cognitive_weight = 1.5
-    social_weight = 0.5
+    inertia_weight = 0.5
+    cognitive_weight = 2.5
+    social_weight = 0.7
     
     particles = [Particle(num_waypoints, initial_coord, final_coord, altitude, day) for _ in range(num_particles)]
 
@@ -268,7 +268,7 @@ altitude = 1  # for weather data
 day = 1  # for weather data
 num_waypoints = 15
 num_particles = 1
-num_iterations = 1
+num_iterations = 2
 speed_meters_per_second = 227.435889  # determined by historic data
 
 best_waypoints, best_fitness = pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second)
