@@ -52,8 +52,8 @@ def generate_waypoints(lat1, lon1, lat2, lon2, num_waypoints):
     return waypoints
 
 def main():
-    start_lat, start_lon = 52.33193666208914, 4.91636699999146  # Replace with the actual start coordinates
-    end_lat, end_lon = -81.30421168617204, 102.099288545431156  # Replace with the actual end coordinates
+    start_lat, start_lon = 52.302011, 4.781655  # Replace with the actual start coordinates
+    end_lat, end_lon = 41.300061, 2.075436  # Replace with the actual end coordinates
     num_waypoints = 15  # Replace with the desired number of waypoints
 
     # Calculate the total distance and convert it to nautical miles

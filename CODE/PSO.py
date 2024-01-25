@@ -138,7 +138,6 @@ def calculate_fitness(waypoints, altitude, day, speed_meters_per_second):
     fitness = total_fuel_used
     return fitness
 
-
 def calculate_time(waypoints, speed):
     time = 0
     for i in range(len(waypoints) - 1):
@@ -174,8 +173,8 @@ def update_waypoints(particle, exploration_time):
 
 def pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second):
     inertia_weight = 0.5
-    cognitive_weight = 2.5
-    social_weight = 0.7
+    cognitive_weight = 1.8
+    social_weight = 0.8
     
     particles = [Particle(num_waypoints, initial_coord, final_coord, altitude, day) for _ in range(num_particles)]
 
@@ -267,8 +266,8 @@ final_coord = np.array([41.300061, 2.075436])
 altitude = 1  # for weather data
 day = 1  # for weather data
 num_waypoints = 15
-num_particles = 1
-num_iterations = 2
+num_particles = 100
+num_iterations = 30
 speed_meters_per_second = 227.435889  # determined by historic data
 
 best_waypoints, best_fitness = pso(initial_coord, final_coord, altitude, day, num_waypoints, num_particles, num_iterations, speed_meters_per_second)
