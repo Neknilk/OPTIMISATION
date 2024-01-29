@@ -1,0 +1,93 @@
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+from itertools import cycle
+
+# Assuming you have a folder containing 7 CSV files, each representing a different flight
+folder_path = r'PSO\DATA\historical flight data\AMS-BCN\CSV\cleaned'
+
+# Create empty lists to store average values for each flight
+average_speed_true_airspeed = []
+average_speed_total_air_temp = []
+average_temp_true_airspeed = []
+average_temp_total_air_temp = []
+average_fuel_flow_true_airspeed = []
+average_fuel_flow_total_air_temp = []
+
+# Plotting Fuel Flow vs True Airspeed
+fig, ax1 = plt.subplots()
+
+# Define a set of 7 distinct colors
+colors = cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
+
+# Iterate through each CSV file in the folder
+for filename, color in zip(os.listdir(folder_path), colors):
+    if filename.endswith('.csv'):
+        # Read the CSV file into a DataFrame
+        df = pd.read_csv(os.path.join(folder_path, filename))
+
+        # Drop rows with missing values in the specified columns
+        df.dropna(subset=['TRUE AIRSPEED (derived)', 'SELECTED FUEL FLOW #1 (KG)', 'SELECTED FUEL FLOW #2 (KG)', 'TOTAL AIR TEMP'],
+                   inplace=True)
+
+        # Plot Fuel Flow vs True Airspeed with the specified color
+        ax1.scatter(df['TRUE AIRSPEED (derived)'], df['SELECTED FUEL FLOW #1 (KG)'] + df['SELECTED FUEL FLOW #2 (KG)'],
+                    label=f'Flight {filename}', color=color)
+
+        # Calculate average values for this flight and append to the lists
+        avg_speed = df['TRUE AIRSPEED (derived)'].mean()
+        avg_temp = df['TOTAL AIR TEMP'].mean()
+        avg_fuel_flow = (df['SELECTED FUEL FLOW #1 (KG)'] + df['SELECTED FUEL FLOW #2 (KG)']).mean()
+
+        average_speed_true_airspeed.append((f'Flight {filename}', avg_speed, avg_temp, avg_fuel_flow))
+
+# Set labels and title for Fuel Flow vs True Airspeed
+ax1.set_xlabel('TRUE AIRSPEED (derived)')
+ax1.set_ylabel('Total Selected Fuel Flow (KG)')
+ax1.set_title('Fuel Flow vs True Airspeed for Different Flights')
+ax1.legend()
+
+# Display average values in the legend
+average_speed_true_airspeed_all = sum([avg_speed for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_true_airspeed]) / len(average_speed_true_airspeed)
+average_temp_true_airspeed_all = sum([avg_temp for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_true_airspeed]) / len(average_speed_true_airspeed)
+average_fuel_flow_true_airspeed_all = sum([avg_fuel_flow for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_true_airspeed]) / len(average_speed_true_airspeed)
+ax1.legend([f'All Flights (Avg Speed: {average_speed_true_airspeed_all:.2f}, Avg Temp: {average_temp_true_airspeed_all:.2f}, Avg Fuel Flow: {average_fuel_flow_true_airspeed_all:.2f} KG)'] + [f'{label} (Avg Speed: {avg_speed:.2f}, Avg Temp: {avg_temp:.2f}, Avg Fuel Flow: {avg_fuel_flow:.2f} KG)' if isinstance(avg_speed, tuple) else f'{label} (Avg Speed: {avg_speed:.2f}, Avg Fuel Flow: {avg_fuel_flow:.2f} KG)' for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_true_airspeed])
+
+# Plotting Fuel Flow vs Total Air Temp
+fig, ax2 = plt.subplots()
+
+# Iterate through each CSV file in the folder
+for filename, color in zip(os.listdir(folder_path), colors):
+    if filename.endswith('.csv'):
+        # Read the CSV file into a DataFrame
+        df = pd.read_csv(os.path.join(folder_path, filename))
+
+        # Drop rows with missing values in the specified columns
+        df.dropna(subset=['TOTAL AIR TEMP', 'SELECTED FUEL FLOW #1 (KG)', 'SELECTED FUEL FLOW #2 (KG)', 'TRUE AIRSPEED (derived)'],
+                   inplace=True)
+
+        # Plot Fuel Flow vs Total Air Temp with the specified color
+        ax2.scatter(df['TOTAL AIR TEMP'], df['SELECTED FUEL FLOW #1 (KG)'] + df['SELECTED FUEL FLOW #2 (KG)'],
+                    label=f'Flight {filename}', color=color)
+
+        # Calculate average values for this flight and append to the lists
+        avg_speed = df['TRUE AIRSPEED (derived)'].mean()
+        avg_temp = df['TOTAL AIR TEMP'].mean()
+        avg_fuel_flow = (df['SELECTED FUEL FLOW #1 (KG)'] + df['SELECTED FUEL FLOW #2 (KG)']).mean()
+
+        average_speed_total_air_temp.append((f'Flight {filename}', avg_speed, avg_temp, avg_fuel_flow))
+
+# Set labels and title for Fuel Flow vs Total Air Temp
+ax2.set_xlabel('TOTAL AIR TEMP')
+ax2.set_ylabel('Total Selected Fuel Flow (KG)')
+ax2.set_title('Fuel Flow vs Total Air Temp for Different Flights')
+ax2.legend()
+
+# Display average values in the legend
+average_speed_total_air_temp_all = sum([avg_speed for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_total_air_temp]) / len(average_speed_total_air_temp)
+average_temp_total_air_temp_all = sum([avg_temp for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_total_air_temp]) / len(average_speed_total_air_temp)
+average_fuel_flow_total_air_temp_all = sum([avg_fuel_flow for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_total_air_temp]) / len(average_speed_total_air_temp)
+ax2.legend([f'All Flights (Avg Speed: {average_speed_total_air_temp_all:.2f}, Avg Temp: {average_temp_total_air_temp_all:.2f}, Avg Fuel Flow: {average_fuel_flow_total_air_temp_all:.2f} KG)'] + [f'{label} (Avg Speed: {avg_speed:.2f}, Avg Temp: {avg_temp:.2f}, Avg Fuel Flow: {avg_fuel_flow:.2f} KG)' if isinstance(avg_speed, tuple) else f'{label} (Avg Speed: {avg_speed:.2f}, Avg Fuel Flow: {avg_fuel_flow:.2f} KG)' for label, avg_speed, avg_temp, avg_fuel_flow in average_speed_total_air_temp])
+
+# Show both plots
+plt.show()

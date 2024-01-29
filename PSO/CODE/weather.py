@@ -1,0 +1,48 @@
+import numpy as np
+import os
+
+# Function to calculate row index based on latitude and longitude
+def calculate_row(lat, lon):
+    lat_i = round((lat + 90) / 180 * 301)
+    lon_i = round((lon + 180) / 360 * 601)
+    return (lat_i - 1) * 601 + lon_i - 1
+
+# Function to retrieve weather data for a given day, altitude, latitude, and longitude
+def get_weather_data(day, altitude, latitude, longitude):
+    # Specify the base directory for day data
+    base_directory = r'PSO\DATA\weather'
+
+    # Construct the file paths for TMP, WIND, and WDIR with the specified day, altitude, latitude, and longitude
+    tmp_path = os.path.join(base_directory, f'Day_{day}_v_2', f'TMP_date_{day}_alt_{altitude}.csv')
+    wind_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WIND_date_{day}_alt_{altitude}.csv')
+    wdir_path = os.path.join(base_directory, f'Day_{day}_v_2', f'WDIR_date_{day}_alt_{altitude}.csv')
+
+    try:
+        # Load weather data for the specified day, altitude, latitude, and longitude
+        tmp = np.genfromtxt(tmp_path, delimiter=',')
+        wind = np.genfromtxt(wind_path, delimiter=',')
+        wdir = np.genfromtxt(wdir_path, delimiter=',')
+
+        # Calculate the row index based on specified latitude and longitude
+        row = calculate_row(latitude, longitude)
+
+        # Return the weather data for the specified location
+        return tmp[row][2], wind[row][2], wdir[row][2]
+
+    except FileNotFoundError:
+        print(f"File not found for Day {day} at Altitude {altitude}. Skipping...")
+        return None, None, None
+
+# Example usage for day 1, altitude 1, and a specific location
+user_lat = 0  # Example latitude
+user_lon = -122.4194  # Example longitude
+user_altitude = 5
+day = 2
+
+temperature, wind_speed, wind_direction = get_weather_data(day, user_altitude, user_lat, user_lon)
+
+if temperature is not None:
+    print(f"Weather Data for Day {day}, Altitude {user_altitude}, Latitude {user_lat}, Longitude {user_lon}:")
+    print(f"Temperature: {temperature} K")
+    print(f"Wind Speed: {wind_speed} m/s")
+    print(f"Wind Direction: {wind_direction} degrees")
