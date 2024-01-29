@@ -5,7 +5,7 @@ import cartopy.feature as cfeature
 from geographiclib.geodesic import Geodesic
 
 # Load the CSV file into a pandas DataFrame excluding the last row
-csv_path = r'C:\Users\jayva\OneDrive - HvA\TFOE\COP\CODE COP\PSO\ROUTE output\OPO-SD.csv'
+csv_path = r'C:\Users\jayva\Documents\GitHub\OPTIMISATION\PSO\ROUTE output\AMS-BCNv4.csv'
 df = pd.read_csv(csv_path, engine='python')  # Skip the last row
 
 # Convert latitude and longitude columns to numeric
