@@ -107,8 +107,6 @@ def get_weather_data(day, altitude, latitude, longitude):
         return None, None, None
     
 
-    
-
 def calculate_bearing(lat1, lon1, lat2, lon2):
     # Convert latitude and longitude from degrees to radians
     lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
@@ -287,10 +285,10 @@ def calculate_and_save_output(csv_path, waypoints, altitude, day, speed_meters_p
 
 # Example usage
 initial_coord = np.array([52.302011, 4.781655]) 
-final_coord = np.array([-7.964399599652115, -14.40393535344008])
-altitude = 2  # for weather data
+final_coord = np.array([41.295277, 2.090804])
+altitude = 1  # for weather data
 day = 1  # for weather data
-num_waypoints = 30
+num_waypoints = 15
 num_particles = 1000
 num_iterations = 60
 speed_meters_per_second = 227.435889  # determined by historic data
@@ -302,7 +300,7 @@ time_taken = calculate_time(best_waypoints, speed_meters_per_second)
 
 # Save waypoints as a CSV file with burned fuel and time information
 csv_directory = r'ROUTE output'
-csv_path = os.path.join(csv_directory, "AMS-acention.csv")
+csv_path = os.path.join(csv_directory, "AMS-BCNv4.csv")
 
 calculate_and_save_output(csv_path, best_waypoints, altitude, day, speed_meters_per_second)
 

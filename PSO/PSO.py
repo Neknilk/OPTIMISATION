@@ -12,7 +12,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="sklearn") #for k
 geod = Geodesic.WGS84
 
 # Load the pre-trained joblib model
-fuel_flow_model_path = r'CODE\FF model.joblib'
+fuel_flow_model_path = r'PSO\CODE\FF model.joblib'
 fuel_flow_model = joblib.load(fuel_flow_model_path)
 
 
@@ -76,7 +76,7 @@ def calculate_row(lat, lon):
     return ((lat_i - 1) * 601) + lon_i - 1
 
 
-base_directory = r'DATA\weather'
+base_directory = r'PSO\DATA\weather'
 
 @lru_cache(maxsize=None)
 def load_tmp_array(day, altitude):
@@ -284,8 +284,8 @@ def calculate_and_save_output(csv_path, waypoints, altitude, day, speed_meters_p
 
 
 # Example usage
-initial_coord = np.array([41.295277, 2.090804]) 
-final_coord = np.array([52.302011, 4.781655])
+initial_coord = np.array([52.302011, 4.781655]) 
+final_coord = np.array([41.295277, 2.090804])
 altitude = 1  # for weather data
 day = 1  # for weather data
 num_waypoints = 15
@@ -299,8 +299,8 @@ best_waypoints, best_fitness = pso(initial_coord, final_coord, altitude, day, nu
 time_taken = calculate_time(best_waypoints, speed_meters_per_second)
 
 # Save waypoints as a CSV file with burned fuel and time information
-csv_directory = r'ROUTE output'
-csv_path = os.path.join(csv_directory, "BCN-AMS.csv")
+csv_directory = r'PSO\ROUTE output'
+csv_path = os.path.join(csv_directory, "AMS-BCNv4.csv")
 
 calculate_and_save_output(csv_path, best_waypoints, altitude, day, speed_meters_per_second)
 
